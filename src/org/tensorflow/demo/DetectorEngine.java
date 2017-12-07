@@ -184,6 +184,22 @@ public class DetectorEngine {
         //   return new Point(1280, 720);
     }
 
+    public void pointCloudUpdate(TangoPointCloudData pointCloud) {
+        mPointCloudManager.updatePointCloud(pointCloud);
+    }
+
+    public void onTangoFrameAvailable(int i) {
+        //Log.i("onFrameAvailabe", "Main onFrameAvailabe called");
+        if (i == TangoCameraIntrinsics.TANGO_CAMERA_COLOR) {
+            // mColorCameraPreview.onFrameAvailable();
+            view_.requestRender();
+            if(renderer_.argbInt != null){
+                detect.argbInt = renderer_.argbInt;
+                detect.processPerFrame();
+            }
+        }
+    }
+
 
     private void startTango() {
         try {
@@ -199,42 +215,7 @@ public class DetectorEngine {
                     tango_.connectTextureId(entry.getKey(), entry.getValue());
             }
 
-            // Attach Tango listener.
-            ArrayList<TangoCoordinateFramePair> framePairs = new ArrayList<>();
-            framePairs.add(new TangoCoordinateFramePair(
-                    TangoPoseData.COORDINATE_FRAME_START_OF_SERVICE,
-                    TangoPoseData.COORDINATE_FRAME_DEVICE));
-            tango_.connectListener(framePairs, new Tango.TangoUpdateCallback(){
-                @Override
-                public void onPointCloudAvailable(TangoPointCloudData pointCloud) {
-                    mPointCloudManager.updatePointCloud(pointCloud);
-                }
-
-                @Override
-                public void onPoseAvailable(TangoPoseData tangoPoseData) {
-                }
-
-                @Override
-                public void onXyzIjAvailable(TangoXyzIjData tangoXyzIjData) {
-                }
-                @Override
-                public void onTangoEvent(TangoEvent tangoEvent) {
-                    //Log.i("TangoEvent", String.format("%s: %s", tangoEvent.eventKey, tangoEvent.eventValue));
-                }
-                @Override
-                public void onFrameAvailable(int i) {
-                    //Log.i("onFrameAvailabe", "Main onFrameAvailabe called");
-                    if (i == TangoCameraIntrinsics.TANGO_CAMERA_COLOR) {
-                        // mColorCameraPreview.onFrameAvailable();
-                        view_.requestRender();
-                        if(renderer_.argbInt != null){
-                            detect.argbInt = renderer_.argbInt;
-                            detect.processPerFrame();
-                        }
-                    }
-                }
-            });
-
+            // Attach Tango experimental listener.
             tango_.experimentalConnectOnFrameListener(TangoCameraIntrinsics.TANGO_CAMERA_COLOR,
                     new Tango.OnFrameAvailableListener() {
                         @Override
