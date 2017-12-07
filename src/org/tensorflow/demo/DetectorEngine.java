@@ -117,12 +117,6 @@ public class DetectorEngine {
 
     }
 
-//    @Override
-//    public void onStart(){
-//        Log.i("onStart " , "Main onStart");
-//        super.onStart();
-//    }
-
     public void resumeEngine() {
         Log.i(TAG, "resumeEngine called");
     }
@@ -144,6 +138,7 @@ public class DetectorEngine {
 
     public void pauseEngine() {
         Log.i(TAG, "pauseEngine called");
+        tangoConnected_ = false;
     }
 
     public void destroyEngine() {
@@ -207,8 +202,6 @@ public class DetectorEngine {
             tangoConnected_ = true;
             Log.i("startTango", "Tango Connected");
 
-
-
             // Attach cameras to textures.
             synchronized(this) {
                 for (Map.Entry<Integer, Integer> entry : cameraTextures_.entrySet())
@@ -240,18 +233,6 @@ public class DetectorEngine {
         }
         catch (TangoOutOfDateException e) {
             Log.e(TAG, "TangoCore update required");
-        }
-        catch (TangoErrorException e) {
-            Log.e(TAG, "Tango error: " + e.getMessage());
-        }
-    }
-
-    private void stopTango() {
-        try {
-            if (tangoConnected_) {
-                tango_.disconnect();
-                tangoConnected_ = false;
-            }
         }
         catch (TangoErrorException e) {
             Log.e(TAG, "Tango error: " + e.getMessage());
