@@ -72,7 +72,7 @@ def bazelLocation = '/usr/local/bin/bazel'
 project.ext.ASSET_DIR = projectDir.toString() + '/assets'
 project.ext.TMP_DIR   = project.buildDir.toString() + '/downloads'
 
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 23
@@ -80,7 +80,7 @@ android {
 
     if (nativeBuildSystem == 'cmake') {
         defaultConfig {
-            applicationId = 'com.tensorflow.demo'
+            // applicationId = 'com.tensorflow.demo'
             minSdkVersion 21
             targetSdkVersion 23
             ndk {
