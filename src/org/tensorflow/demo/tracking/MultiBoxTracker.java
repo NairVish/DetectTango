@@ -23,7 +23,6 @@ import android.graphics.Paint;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
-import android.graphics.PointF;
 import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.Pair;
@@ -33,7 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import org.tensorflow.demo.Classifier.Recognition;
-import org.tensorflow.demo.MainActivity;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
@@ -196,7 +194,8 @@ public class MultiBoxTracker {
 
   public synchronized void drawYolo(final Canvas canvas) {
     // TODO(andrewharp): This may not work for non-90 deg rotations.
-    /*final float multiplier =
+    // For portrait
+    final float multiplier =
         Math.min(canvas.getWidth() / (float) frameHeight, canvas.getHeight() / (float) frameWidth);
     frameToCanvasMatrix =
         ImageUtils.getTransformationMatrix(
@@ -205,8 +204,9 @@ public class MultiBoxTracker {
             (int) (multiplier * frameHeight),
             (int) (multiplier * frameWidth),
             sensorOrientation,
-            false);*/
+            false);
     rectDepth.clear();
+    /* For Landscape
     final float multiplier =
             Math.min(canvas.getWidth() / (float) frameWidth, canvas.getHeight() / (float) frameHeight);
     frameToCanvasMatrix =
@@ -216,7 +216,7 @@ public class MultiBoxTracker {
                     (int) (multiplier * frameWidth),
                     (int) (multiplier * frameHeight),
                     sensorOrientation,
-                    false);
+                    false);*/
     for (final TrackedRecognition recognition : trackedObjects) {
       final RectF trackedPos =
               (objectTracker != null)

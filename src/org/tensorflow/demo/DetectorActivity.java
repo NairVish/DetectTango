@@ -99,7 +99,7 @@ public class DetectorActivity extends Activity  {
   private static final boolean SAVE_PREVIEW_BITMAP = false;
   private static final float TEXT_SIZE_DIP = 10;
 
-  private Integer sensorOrientation;
+  public Integer sensorOrientation;
 
   private Classifier detector;
 
@@ -266,7 +266,8 @@ public class DetectorActivity extends Activity  {
    // LOGGER.i("Sensor orientation: %d, Screen orientation: %d", rotation, screenOrientation);
 
     //sensorOrientation = rotation + screenOrientation;
-    sensorOrientation = 0;
+    sensorOrientation = 90;
+
 
     LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
     rgbBytes = new int[previewWidth * previewHeight];
@@ -283,7 +284,7 @@ public class DetectorActivity extends Activity  {
     frameToCropTransform.invert(cropToFrameTransform);
     yuvBytes = new byte[3][];
 
-    trackingOverlay = (OverlayView) ((Activity)context).findViewById(R.id.tracking_overlay);
+    trackingOverlay = new OverlayView(context, null);
     trackingOverlay.addCallback(
         new DrawCallback() {
           @Override

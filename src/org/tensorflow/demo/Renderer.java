@@ -96,7 +96,7 @@ class Renderer implements GLSurfaceView.Renderer {
       "	gl_FragColor = cap != 0 ? c.bgra : c;\n" +
       "}\n";
 
-   MainActivity activity_;
+   DetectorEngine dE_;
 
    int videoProgram_;
    int videoVertexAttribute_;
@@ -109,8 +109,8 @@ class Renderer implements GLSurfaceView.Renderer {
    volatile boolean saveNextFrame_;
    public volatile int[] argbInt = null;
 
-   Renderer(MainActivity activity) {
-      activity_ = activity;
+   Renderer(DetectorEngine activity) {
+      dE_ = activity;
    }
 
    @Override
@@ -141,7 +141,7 @@ class Renderer implements GLSurfaceView.Renderer {
       glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, videoTextureName_);
 
       // Connect the texture to Tango.
-      activity_.attachTexture(TangoCameraIntrinsics.TANGO_CAMERA_COLOR, videoTextureName_);
+      dE_.attachTexture(TangoCameraIntrinsics.TANGO_CAMERA_COLOR, videoTextureName_);
 
       // Prepare the shader program.
       videoProgram_ = createShaderProgram(videoVertexSource, videoFragmentSource);
@@ -155,7 +155,7 @@ class Renderer implements GLSurfaceView.Renderer {
               0);
 
       // Get the camera frame dimensions.
-      offscreenSize_ = activity_.getCameraFrameSize(TangoCameraIntrinsics.TANGO_CAMERA_COLOR);
+      offscreenSize_ = dE_.getCameraFrameSize(TangoCameraIntrinsics.TANGO_CAMERA_COLOR);
 
       // Create an offscreen render target to capture a frame.
       IntBuffer renderbufferName = IntBuffer.allocate(1);
@@ -239,20 +239,16 @@ class Renderer implements GLSurfaceView.Renderer {
 
    @Override
    public void onDrawFrame(GL10 gl) {
-      activity_.updateTexture(TangoCameraIntrinsics.TANGO_CAMERA_COLOR);
+      dE_.updateTexture(TangoCameraIntrinsics.TANGO_CAMERA_COLOR);
 
-      /* if(argbInt != null) {
-           glBindBuffer(GL_ARRAY_BUFFER, videoVertexBuffer_);
-           glVertexAttribPointer(videoVertexAttribute_, 2, GL_BYTE, false, 0, 0);
-           glEnableVertexAttribArray(videoVertexAttribute_);
-           glActiveTexture(GL_TEXTURE0);
-           glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, videoTextureName_);
-           glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-           glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-           glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-           return;
-       }*/
+//      glBindBuffer(GL_ARRAY_BUFFER, videoVertexBuffer_);
+//      glVertexAttribPointer(videoVertexAttribute_, 2, GL_BYTE, false, 0, 0);
+//      glEnableVertexAttribArray(videoVertexAttribute_);
+//      glActiveTexture(GL_TEXTURE0);
+//      glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, videoTextureName_);
+//      glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//      glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//      glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
       glBindBuffer(GL_ARRAY_BUFFER, videoVertexBuffer_);
       glVertexAttribPointer(videoVertexAttribute_, 2, GL_BYTE, false, 0, 0);
@@ -329,98 +325,7 @@ class Renderer implements GLSurfaceView.Renderer {
       mNewYData = yAll; */
       argbInt = pixels; // will be accessed from the processing task in NavigationActitivty
 
-      /*
-      if (!saveNextFrame_) {
-         glBindBuffer(GL_ARRAY_BUFFER, videoVertexBuffer_);
-         glVertexAttribPointer(videoVertexAttribute_, 2, GL_BYTE, false, 0, 0);
-         glEnableVertexAttribArray(videoVertexAttribute_);
-         glActiveTexture(GL_TEXTURE0);
-         glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, videoTextureName_);
-         glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-         glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-      }
-      else {
-         // Switch to the offscreen buffer.
-         glBindFramebuffer(GL_FRAMEBUFFER, offscreenBuffer_);
 
-         // Save current viewport and change to offscreen size.
-         IntBuffer viewport = IntBuffer.allocate(4);
-         glGetIntegerv(GL_VIEWPORT, viewport);
-         glViewport(0, 0, offscreenSize_.x, offscreenSize_.y);
-
-         // Render in capture mode. Setting this flags tells the shader
-         // program to draw the texture right-side up and change the color
-         // order to ARGB for compatibility with Bitmap.
-         glUniform1i(
-            glGetUniformLocation(videoProgram_, "cap"),
-            1);
-
-         // Render.
-         glBindBuffer(GL_ARRAY_BUFFER, videoVertexBuffer_);
-         glVertexAttribPointer(videoVertexAttribute_, 2, GL_BYTE, false, 0, 0);
-         glEnableVertexAttribArray(videoVertexAttribute_);
-         glActiveTexture(GL_TEXTURE0);
-         glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, videoTextureName_);
-         glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-         glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-         // Read offscreen buffer.
-         IntBuffer intBuffer = ByteBuffer.allocateDirect(offscreenSize_.x * offscreenSize_.y * 4)
-                 .order(ByteOrder.nativeOrder())
-                 .asIntBuffer();
-         glReadPixels(0, 0, offscreenSize_.x, offscreenSize_.y, GL_RGBA, GL_UNSIGNED_BYTE, intBuffer.rewind());
-
-         // Restore onscreen state.
-         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-         glViewport(viewport.get(0), viewport.get(1), viewport.get(2), viewport.get(3));
-         glUniform1i(
-                 glGetUniformLocation(videoProgram_, "cap"),
-                 0);
-
-         // Convert to an array for Bitmap.createBitmap().
-         int[] pixels = new int[intBuffer.capacity()];
-         intBuffer.rewind();
-         intBuffer.get(pixels);
-         saveNextFrame_ = false;
-
-         try {
-            // Create/access a pictures subdirectory.
-            File directory = new File(
-               Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-               "Tango Captures");
-            if (!directory.mkdirs() && !directory.isDirectory()) {
-               Toast.makeText(
-                       activity_,
-                       "Could not access save directory",
-                       Toast.LENGTH_SHORT).show();
-               return;
-            }
-
-            // Get the current capture index to construct a unique filename.
-            SharedPreferences prefs = activity_.getPreferences(Context.MODE_PRIVATE);
-            int index = prefs.getInt("index", 0);
-            SharedPreferences.Editor prefsEditor = prefs.edit();
-            prefsEditor.putInt("index", index + 1);
-            prefsEditor.commit();
-
-            // Create the capture file.
-            File file = new File(directory, String.format("tango%05d.png", index));
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-
-            // Bitmap conveniently provides file output.
-            Bitmap bitmap = Bitmap.createBitmap(pixels, offscreenSize_.x, offscreenSize_.y, Bitmap.Config.ARGB_8888);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 90, fileOutputStream);
-            fileOutputStream.close();
-
-            // Make the new file visible to other apps.
-            activity_.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
-         }
-         catch (Exception e) {
-            e.printStackTrace();
-         }
-      } */
    }
 
    void saveFrame() {

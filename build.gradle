@@ -76,7 +76,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "26.0.1"
+    buildToolsVersion "26.0.2"
 
     if (nativeBuildSystem == 'cmake') {
         defaultConfig {
@@ -108,13 +108,13 @@ android {
             if (nativeBuildSystem == 'bazel' || nativeBuildSystem == 'makefile') {
                 // TensorFlow Java API sources.
                 java {
-                    srcDir '../../java/src/main/java'
+                    srcDir '/Users/vnair/tensorflow/tensorflow/java/src/main/java'
                     exclude '**/examples/**'
                 }
 
                 // Android TensorFlow wrappers, etc.
                 java {
-                    srcDir '../../contrib/android/java'
+                    srcDir '/Users/vnair/tensorflow/tensorflow/contrib/android/java'
                 }
             }
             // Android demo app sources.
@@ -147,7 +147,7 @@ android {
 task buildNativeBazel(type: Exec) {
     workingDir '../../..'
     commandLine bazelLocation, 'build', '-c', 'opt',  \
-         'tensorflow/examples/android:tensorflow_native_libs',  \
+         '/Users/vnair/tensorflow/examples/android:tensorflow_native_libs',  \
          '--crosstool_top=//external:android/crosstool',  \
          '--cpu=' + cpuType,  \
          '--host_crosstool_top=@bazel_tools//tools/cpp:toolchain'
@@ -159,9 +159,9 @@ task buildNativeMake(type: Exec) {
     // builds significantly.
     // environment "CC_PREFIX", 'ccache'
     workingDir '../../..'
-    commandLine 'tensorflow/contrib/makefile/build_all_android.sh',  \
+    commandLine '/Users/vnair/tensorflow/contrib/makefile/build_all_android.sh',  \
          '-s',  \
-         'tensorflow/contrib/makefile/sub_makefiles/android/Makefile.in',  \
+         '/Users/vnair/tensorflow/contrib/makefile/sub_makefiles/android/Makefile.in',  \
          '-t',  \
          'libtensorflow_inference.so libtensorflow_demo.so'  \
          //, '-T'  // Uncomment to skip protobuf and speed up subsequent builds.
