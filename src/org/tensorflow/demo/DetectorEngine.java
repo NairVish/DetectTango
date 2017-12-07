@@ -1,38 +1,21 @@
 package org.tensorflow.demo;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.PointF;
-import android.media.ImageReader;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.Paint.Style;
-import android.graphics.RectF;
-import android.graphics.Typeface;
-import android.media.Image;
-import android.media.Image.Plane;
-import android.media.ImageReader;
-import android.media.ImageReader.OnImageAvailableListener;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.os.SystemClock;
-import android.os.Trace;
-import android.util.Log;
-import android.util.Size;
-import android.util.TypedValue;
-import android.view.Display;
-import android.widget.Toast;
-import android.view.View;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.google.atap.tangoservice.Tango;
-import com.google.atap.tangoservice.Tango.OnTangoUpdateListener;
-import com.google.atap.tangoservice.Tango.TangoUpdateCallback;
 import com.google.atap.tangoservice.TangoCameraIntrinsics;
 import com.google.atap.tangoservice.TangoConfig;
 import com.google.atap.tangoservice.TangoCoordinateFramePair;
@@ -47,36 +30,29 @@ import com.google.atap.tangoservice.experimental.TangoImageBuffer;
 import com.google.tango.depthinterpolation.TangoDepthInterpolation;
 import com.google.tango.support.TangoPointCloudManager;
 import com.google.tango.support.TangoSupport;
-import com.google.tango.transformhelpers.TangoTransformHelper;
+
+import org.tensorflow.demo.env.ImageUtils;
 
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-import java.util.concurrent.TimeUnit;
-import java.lang.Math;
 import java.util.Locale;
-
-import org.tensorflow.demo.OverlayView.DrawCallback;
-import org.tensorflow.demo.env.BorderedText;
-import org.tensorflow.demo.env.ImageUtils;
-import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.tracking.MultiBoxTracker;
-import org.tensorflow.demo.R;
-import org.tensorflow.demo.DetectorActivity;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by manjekarbudhai on 7/27/17.
  */
 
-public class MainActivity extends CameraActivity  {
+public class DetectorEngine {
+
+    private static final String TAG = "DetectorEngine";
+
+    private Context mContext;
+    private Activity mActivity;
 
     private Tango tango_;
-    private TangoConfig tangoConfig_;
+//    private TangoConfig tangoConfig_;
     private volatile boolean tangoConnected_ = false;
     private TangoPointCloudManager mPointCloudManager;
     HashMap<Integer, Integer> cameraTextures_ = null;
@@ -85,8 +61,12 @@ public class MainActivity extends CameraActivity  {
     private volatile TangoImageBuffer mCurrentImageBuffer;
     private int mDisplayRotation = 0;
     private Matrix rgbImageToDepthImage;
-    TextToSpeech tts1;
+    protected DetectorActivity detect;
 
+    public static final String DETECTION_SPEAK_BROADCAST_ACTION = "org.tensorflow.demo.SPEAK_DETECTION";
+    public static final String KEY_DEPTH = "org.tensorflow.demo.SPEAK_DETECTION.CLOSEST_DEPTH";
+    public static final String KEY_DIRECTION = "org.tensorflow.demo.SPEAK_DETECTION.KEY_DIRECTION";
+    public static final String KEY_HEAD_COUNT = "org.tensorflow.demo.SPEAK_DETECTION.HEAD_COUNT";
 
     private class MeasuredPoint {
         public double mTimestamp;
@@ -98,61 +78,35 @@ public class MainActivity extends CameraActivity  {
         }
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState){
+    @SuppressLint("WrongConstant")
+    DetectorEngine(Context context, Activity activity) {
+        mContext = context;
+        mActivity = activity;
+
         // GLSurfaceView for RGB color camera
 
-        tts1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if(status != TextToSpeech.ERROR) {
-                    tts1.setLanguage(Locale.UK);
-                }
-            }
-        });
+        detect = new DetectorActivity(mContext);
 
+        Display display = mActivity.getWindowManager().getDefaultDisplay();
+        mDisplayRotation = display.getRotation();
+        // detect.sensorOrientation = mDisplayRotation;
 
         rgbImageToDepthImage = ImageUtils.getTransformationMatrix(
                 640, 480,
                 1920, 1080,
                 0, true);
 
-        super.onCreate(savedInstanceState);
-
         cameraTextures_ = new HashMap<>();
         mPointCloudManager = new TangoPointCloudManager();
 
-        // Request depth in the Tango config because otherwise frames
-        // are not delivered.
-        tango_ = new Tango(this, new Runnable(){
-            @Override
-            public void run(){
-                synchronized (this) {
-                    try {
-                        tangoConfig_ = tango_.getConfig(TangoConfig.CONFIG_TYPE_DEFAULT);
-                        tangoConfig_.putBoolean(TangoConfig.KEY_BOOLEAN_COLORCAMERA, true);
-                        tangoConfig_.putBoolean(TangoConfig.KEY_BOOLEAN_DEPTH, true);
-                        tangoConfig_.putInt(TangoConfig.KEY_INT_DEPTH_MODE, TangoConfig.TANGO_DEPTH_MODE_POINT_CLOUD);
-                        tango_.connect(tangoConfig_);
-                        startTango();
-                        TangoSupport.initialize(tango_);
-                        //cameraTextures_ = new HashMap<>();
-
-                    } catch (TangoOutOfDateException e) {
-                        Log.i("new Tango", "error in onCreate");
-                    }
-                }
-            }
-        });
-
         try {
-            TimeUnit.SECONDS.sleep(2);
+            TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         cameraTextures_ = new HashMap<>();
-        view_ = (GLSurfaceView)findViewById(R.id.surfaceviewclass);
+        view_ = (GLSurfaceView) mActivity.findViewById(R.id.surfaceviewclass);
         view_.setEGLContextClientVersion(2);
         view_.setDebugFlags(GLSurfaceView.DEBUG_CHECK_GL_ERROR);
         view_.setRenderer(renderer_ = new Renderer(this));
@@ -161,78 +115,39 @@ public class MainActivity extends CameraActivity  {
         detect.setup();
         Log.i("onCreate", "detection setup completed");
 
+    }
+
+//    @Override
+//    public void onStart(){
+//        Log.i("onStart " , "Main onStart");
+//        super.onStart();
+//    }
+
+    public void resumeEngine() {
+        Log.i(TAG, "resumeEngine called");
+    }
+
+    public void instantiateDetectorTangoConfig(TangoConfig mConfig) {
+        mConfig.putBoolean(TangoConfig.KEY_BOOLEAN_COLORCAMERA, true);
+        mConfig.putBoolean(TangoConfig.KEY_BOOLEAN_AUTORECOVERY, true);
+    }
+
+    public void startDetectorTango(TangoConfig mConfig, Tango mTango) {
+        tango_ = mTango;
+        startTango();
+    }
+
+    public void startDetection() {
         new Thread(new RunDetection()).start();
-
     }
 
-    @Override
-    public void onStart(){
-        Log.i("onStart " , "Main onStart");
-        super.onStart();
+
+    public void pauseEngine() {
+        Log.i(TAG, "pauseEngine called");
     }
 
-    @Override
-    public void onResume() {
-        Log.i("onResume ", "Main onResume called");
-        super.onResume();
-        //startTango();
-        if (tango_ == null) {
-            startActivityForResult(
-                    Tango.getRequestPermissionIntent(Tango.PERMISSIONTYPE_MOTION_TRACKING),
-                    Tango.TANGO_INTENT_ACTIVITYCODE);
-
-
-            tango_ = new Tango(this, new Runnable() {
-
-                @Override
-                public void run() {
-                    Log.i("onResume ", "new tango");
-                    synchronized (this) {
-                        try {
-                            tangoConfig_ = tango_.getConfig(TangoConfig.CONFIG_TYPE_DEFAULT);
-                            tangoConfig_.putBoolean(TangoConfig.KEY_BOOLEAN_COLORCAMERA, true);
-                            tangoConfig_.putBoolean(TangoConfig.KEY_BOOLEAN_AUTORECOVERY, true);
-                            tango_.connect(tangoConfig_);
-                            startTango();
-                            TangoSupport.initialize(tango_);
-                            //cameraTextures_ = new HashMap<>();
-
-                        } catch (TangoOutOfDateException e) {
-                            Log.i("new Tango", "error in onCreate");
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    @Override
-     public void onPause() {
-        super.onPause();
-        /*if(tts1 !=null){
-            tts1.stop();
-            tts1.shutdown();
-        }*/
-        synchronized (this) {
-            try {
-                if (tango_ != null) {
-                    tango_.disconnect();
-                    tangoConnected_ = false;
-                }
-            }
-            catch (TangoErrorException e) {
-                Toast.makeText(
-                        this,
-                        "Tango error: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    @Override
-    public synchronized void onStop() {
-        Log.i("onStop " , "Main onStop");
-        super.onStop();
+    public void destroyEngine() {
+        Log.i(TAG, "destroyEngine called");
     }
 
     public synchronized void attachTexture(final int cameraId, final int textureName) {
@@ -270,23 +185,13 @@ public class MainActivity extends CameraActivity  {
     }
 
 
-
-    protected  void processImageRGBbytes(int[] rgbBytes ) {}
-
-
-
-    @Override
-    public void onSetDebug(final boolean debug){}
-
-
     private void startTango() {
         try {
 
             tangoConnected_ = true;
             Log.i("startTango", "Tango Connected");
 
-            Display display = getWindowManager().getDefaultDisplay();
-            mDisplayRotation = display.getRotation();
+
 
             // Attach cameras to textures.
             synchronized(this) {
@@ -353,20 +258,14 @@ public class MainActivity extends CameraActivity  {
                     });
         }
         catch (TangoOutOfDateException e) {
-            Toast.makeText(
-                    this,
-                    "TangoCore update required",
-                    Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "TangoCore update required");
         }
         catch (TangoErrorException e) {
-            Toast.makeText(
-                    this,
-                    "Tango error: " + e.getMessage(),
-                    Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Tango error: " + e.getMessage());
         }
     }
 
-    private  void stopTango() {
+    private void stopTango() {
         try {
             if (tangoConnected_) {
                 tango_.disconnect();
@@ -374,10 +273,7 @@ public class MainActivity extends CameraActivity  {
             }
         }
         catch (TangoErrorException e) {
-            Toast.makeText(
-                    this,
-                    "Tango error: " + e.getMessage(),
-                    Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Tango error: " + e.getMessage());
         }
     }
 
@@ -419,15 +315,25 @@ public class MainActivity extends CameraActivity  {
                                 if(closest_obstacle.x != 0.0f) {
                                     boolean orientation = getOrientationDir(closest_obstacle);
                                     double orientationval = getOrientationVal(closest_obstacle);
-                                    if(orientationval > 30.0f && orientation) {
-                                        tts1.speak(String.format("There are %d people. The closest is %d meters away, to your right.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                    DetectionDirection curr;
+                                    if (orientationval > 30.0f && orientation) {
+                                        // tts1.speak(String.format("There are %d people. The closest is about %d meters away, to the right.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                        curr = DetectionDirection.RIGHT;
                                     }
-                                    else if(orientationval > 30.0f && !orientation){
-                                        tts1.speak(String.format("There are %d people. The closest is %d meters away, to your left.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                    else if (orientationval > 30.0f && !orientation){
+                                        // tts1.speak(String.format("There are %d people. The closest is about %d meters away, to the left.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                        curr = DetectionDirection.LEFT;
                                     }
-                                    else{
-                                        tts1.speak(String.format("There are %d people. The closest is %d meters away, in front of you.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                    else {
+                                        // tts1.speak(String.format("There are %d people. The closest is about %d meters away, ahead of you.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                        curr = DetectionDirection.AHEAD;
                                     }
+
+                                    Intent in = new Intent(DETECTION_SPEAK_BROADCAST_ACTION);
+                                    in.putExtra(KEY_HEAD_COUNT, head_count);
+                                    in.putExtra(KEY_DEPTH, Math.round(closest_depth));
+                                    in.putExtra(KEY_DIRECTION, curr);
+                                    mContext.sendBroadcast(in);
                                 }
                             }
                         //detect.processRects();
@@ -439,6 +345,12 @@ public class MainActivity extends CameraActivity  {
                 }
             }
         }
+    }
+
+    enum DetectionDirection {
+        LEFT,
+        RIGHT,
+        AHEAD
     }
 
 
