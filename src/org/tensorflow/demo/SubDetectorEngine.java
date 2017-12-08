@@ -279,12 +279,12 @@ public class SubDetectorEngine {
         //LOGGER.i("Normalized coord: %s",rectDepthxy.get(0));
     }
 
-    public void requestRender() {
-        final OverlayView overlay = (OverlayView) ((Activity) context).findViewById(R.id.debug_overlay);
-        if (overlay != null) {
-            overlay.postInvalidate();
-        }
-    }
+//    public void requestRender() {
+//        final OverlayView overlay = (OverlayView) ((Activity) context).findViewById(R.id.debug_overlay);
+//        if (overlay != null) {
+//            overlay.postInvalidate();
+//        }
+//    }
 
     OverlayView trackingOverlay;
 
@@ -370,7 +370,7 @@ public class SubDetectorEngine {
         tracker.trackResults(mappedRecognitions, luminance, currTimestamp);
         trackingOverlay.postInvalidate();
 
-        requestRender();
+        // requestRender();
         computing = false;
     }
 
