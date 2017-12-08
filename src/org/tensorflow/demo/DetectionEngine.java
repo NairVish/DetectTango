@@ -136,6 +136,7 @@ public class DetectionEngine {
     public void destroyEngine() {
         Log.i(TAG, "destroyEngine called");
     }
+    // END required calls.
 
     private void startTango() {
         try {
@@ -179,7 +180,24 @@ public class DetectionEngine {
             Log.e(TAG, "Tango error: " + e.getMessage());
         }
     }
-    // END required calls.
+
+    // Parent instance callback functions
+    public void pointCloudUpdate(TangoPointCloudData pointCloud) {
+        mPointCloudManager.updatePointCloud(pointCloud);
+    }
+
+    public void onTangoFrameAvailable(int i) {
+        //Log.i("onFrameAvailabe", "Main onFrameAvailabe called");
+        if (i == TangoCameraIntrinsics.TANGO_CAMERA_COLOR) {
+            // mColorCameraPreview.onFrameAvailable();
+            view_.requestRender();
+            if(renderer_.argbInt != null){
+                detect.argbInt = renderer_.argbInt;
+                detect.processPerFrame();
+            }
+        }
+    }
+    // END
 
     public synchronized void attachTexture(final int cameraId, final int textureName) {
         if (textureName > 0) {
@@ -213,22 +231,6 @@ public class DetectionEngine {
         // return new Point(intrinsics.width, intrinsics.height);
         return new Point(640, 480);
         //   return new Point(1280, 720);
-    }
-
-    public void pointCloudUpdate(TangoPointCloudData pointCloud) {
-        mPointCloudManager.updatePointCloud(pointCloud);
-    }
-
-    public void onTangoFrameAvailable(int i) {
-        //Log.i("onFrameAvailabe", "Main onFrameAvailabe called");
-        if (i == TangoCameraIntrinsics.TANGO_CAMERA_COLOR) {
-            // mColorCameraPreview.onFrameAvailable();
-            view_.requestRender();
-            if(renderer_.argbInt != null){
-                detect.argbInt = renderer_.argbInt;
-                detect.processPerFrame();
-            }
-        }
     }
 
     public class RunDetection implements Runnable{
