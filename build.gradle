@@ -74,6 +74,8 @@ project.ext.TMP_DIR   = project.buildDir.toString() + '/downloads'
 
 apply plugin: 'com.android.library'
 
+def bazelTFWorkingDir = '/Users/vnair/tensorflow/'
+
 android {
     compileSdkVersion 23
     buildToolsVersion "26.0.2"
@@ -108,13 +110,13 @@ android {
             if (nativeBuildSystem == 'bazel' || nativeBuildSystem == 'makefile') {
                 // TensorFlow Java API sources.
                 java {
-                    srcDir '/Users/vnair/tensorflow/tensorflow/java/src/main/java'
+                    srcDir bazelTFWorkingDir + 'tensorflow/java/src/main/java'
                     exclude '**/examples/**'
                 }
 
                 // Android TensorFlow wrappers, etc.
                 java {
-                    srcDir '/Users/vnair/tensorflow/tensorflow/contrib/android/java'
+                    srcDir bazelTFWorkingDir + 'tensorflow/contrib/android/java'
                 }
             }
             // Android demo app sources.
@@ -143,8 +145,6 @@ android {
     }
 
 }
-
-def bazelTFWorkingDir = '/Users/vnair/tensorflow/'
 
 task buildNativeBazel(type: Exec) {
     workingDir bazelTFWorkingDir
