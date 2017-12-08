@@ -43,7 +43,7 @@ public class DetectionEngine {
     private Activity mActivity;
 
     private Tango tango_;
-//    private TangoConfig tangoConfig_;
+    //    private TangoConfig tangoConfig_;
     private volatile boolean tangoConnected_ = false;
     private TangoPointCloudManager mPointCloudManager;
     HashMap<Integer, Integer> cameraTextures_ = null;
@@ -145,7 +145,7 @@ public class DetectionEngine {
             Log.i(TAG, "Tango Connected");
 
             // Attach cameras to textures.
-            synchronized(this) {
+            synchronized (this) {
                 for (Map.Entry<Integer, Integer> entry : cameraTextures_.entrySet())
                     tango_.connectTextureId(entry.getKey(), entry.getValue());
             }
@@ -172,11 +172,9 @@ public class DetectionEngine {
                                     imageBuffer.exposureDurationNs);
                         }
                     });
-        }
-        catch (TangoOutOfDateException e) {
+        } catch (TangoOutOfDateException e) {
             Log.e(TAG, "TangoCore update required");
-        }
-        catch (TangoErrorException e) {
+        } catch (TangoErrorException e) {
             Log.e(TAG, "Tango error: " + e.getMessage());
         }
     }
@@ -191,7 +189,7 @@ public class DetectionEngine {
         if (i == TangoCameraIntrinsics.TANGO_CAMERA_COLOR) {
             // mColorCameraPreview.onFrameAvailable();
             view_.requestRender();
-            if(renderer_.argbInt != null){
+            if (renderer_.argbInt != null) {
                 detect.argbInt = renderer_.argbInt;
                 detect.processPerFrame();
             }
@@ -205,13 +203,12 @@ public class DetectionEngine {
             // Tango is connected. This generally doesn't happen but
             // technically could because they happen in separate
             // threads. Otherwise the link will be made in startTango().
-            if(cameraTextures_ != null && tango_ != null) {
+            if (cameraTextures_ != null && tango_ != null) {
                 if (tangoConnected_ && cameraTextures_.get(cameraId) != textureName)
                     tango_.connectTextureId(cameraId, textureName);
                 cameraTextures_.put(cameraId, textureName);
             }
-        }
-        else
+        } else
             cameraTextures_.remove(cameraId);
     }
 
@@ -219,8 +216,7 @@ public class DetectionEngine {
         if (tangoConnected_) {
             try {
                 tango_.updateTexture(cameraId);
-            }
-            catch (TangoInvalidException e) {
+            } catch (TangoInvalidException e) {
                 e.printStackTrace();
             }
         }
@@ -233,17 +229,17 @@ public class DetectionEngine {
         //   return new Point(1280, 720);
     }
 
-    public class RunDetection implements Runnable{
+    public class RunDetection implements Runnable {
         @Override
-        public void run(){
-            final int  sleepShort = 5;
+        public void run() {
+            final int sleepShort = 5;
             int count = 0;
             int head_count = 0;
             float closest_depth;
-            PointF closest_obstacle = new PointF(0.0f,0.0f);
-            while(true) {
+            PointF closest_obstacle = new PointF(0.0f, 0.0f);
+            while (true) {
                 try {
-                    if(tangoConnected_ == false){
+                    if (tangoConnected_ == false) {
                         Thread.sleep(sleepShort);
                         continue;
                     }
@@ -251,52 +247,53 @@ public class DetectionEngine {
                         ++count;
                         detect.argbInt = renderer_.argbInt;
                         detect.process();
-                            if(count == 5) {
-                                count = 0;
-                                detect.processRects();
-                                head_count = 0;
-                                closest_depth = 10.0f;
-                                closest_obstacle.set(0.0f,0.0f);
-                                for(PointF rect: detect.rectDepthxy) {
-                                    ++head_count;
-                                    MeasuredPoint m = getBboxDepth(rect.x,rect.y);
-                                    if (m.mDepthTPoint.length == 3) {
-                                        if(m.mDepthTPoint[2] < closest_depth) {
-                                            closest_depth = m.mDepthTPoint[2];
-                                            closest_obstacle = new PointF(rect.x,rect.y);
+                        if (count == 5) {
+                            count = 0;
+                            detect.processRects();
+                            head_count = 0;
+                            closest_depth = 10.0f;
+                            closest_obstacle.set(0.0f, 0.0f);
+                            for (PointF rect : detect.rectDepthxy) {
+                                ++head_count;
+                                MeasuredPoint m = getBboxDepth(rect.x, rect.y);
+                                if (m.mDepthTPoint.length == 3) {
+                                    if (m.mDepthTPoint[2] < closest_depth) {
+                                        closest_depth = m.mDepthTPoint[2];
+                                        closest_obstacle = new PointF(rect.x, rect.y);
 
-                                        }
                                     }
-                                }
-                                if(closest_obstacle.x != 0.0f) {
-                                    boolean orientation = getOrientationDir(closest_obstacle);
-                                    double orientationval = getOrientationVal(closest_obstacle);
-                                    DetectionDirection curr;
-                                    if (orientationval > 30.0f && orientation) {
-                                        // tts1.speak(String.format("There are %d people. The closest is about %d meters away, to the right.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
-                                        curr = DetectionDirection.RIGHT;
-                                    }
-                                    else if (orientationval > 30.0f && !orientation){
-                                        // tts1.speak(String.format("There are %d people. The closest is about %d meters away, to the left.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
-                                        curr = DetectionDirection.LEFT;
-                                    }
-                                    else {
-                                        // tts1.speak(String.format("There are %d people. The closest is about %d meters away, ahead of you.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
-                                        curr = DetectionDirection.AHEAD;
-                                    }
-
-                                    Intent in = new Intent(DETECTION_SPEAK_BROADCAST_ACTION);
-                                    in.putExtra(KEY_HEAD_COUNT, head_count);
-                                    in.putExtra(KEY_DEPTH, Math.round(closest_depth));
-                                    in.putExtra(KEY_DIRECTION, curr);
-                                    mContext.sendBroadcast(in);
                                 }
                             }
+                            if (closest_obstacle.x != 0.0f) {
+                                boolean orientation = getOrientationDir(closest_obstacle);
+                                double orientationval = getOrientationVal(closest_obstacle);
+                                DetectionDirection curr;
+
+                                final float SPLIT_DEPTH = 2.0f;
+
+                                if (orientationval > 30.0f && orientation && closest_depth < SPLIT_DEPTH) {
+                                    // tts1.speak(String.format("There are %d people. The closest is about %d meters away, to the right.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                    curr = DetectionDirection.RIGHT;
+                                } else if (orientationval > 30.0f && !orientation && closest_depth < SPLIT_DEPTH) {
+                                    // tts1.speak(String.format("There are %d people. The closest is about %d meters away, to the left.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                    curr = DetectionDirection.LEFT;
+                                } else {
+                                    // tts1.speak(String.format("There are %d people. The closest is about %d meters away, ahead of you.", head_count, Math.round(closest_depth)), TextToSpeech.QUEUE_FLUSH, null, "Detected");
+                                    curr = DetectionDirection.AHEAD;
+                                }
+
+                                Intent in = new Intent(DETECTION_SPEAK_BROADCAST_ACTION);
+                                in.putExtra(KEY_HEAD_COUNT, head_count);
+                                in.putExtra(KEY_DEPTH, Math.round(closest_depth));
+                                in.putExtra(KEY_DIRECTION, curr);
+                                mContext.sendBroadcast(in);
+                            }
+                        }
                         //detect.processRects();
                     } else {
                         Thread.sleep(sleepShort);
                     }
-                }catch(Exception e){
+                } catch (Exception e) {
                     System.out.println(e);
                 }
             }
@@ -338,8 +335,8 @@ public class DetectionEngine {
 
         depthPoint = TangoDepthInterpolation.getDepthAtPointBilateral(
                 pointCloud,
-                new double[] {0.0, 0.0, 0.0},
-                new double[] {0.0, 0.0, 0.0, 1.0},
+                new double[]{0.0, 0.0, 0.0},
+                new double[]{0.0, 0.0, 0.0, 1.0},
                 imageBuffer,
                 u, v,
                 mDisplayRotation,
@@ -355,23 +352,22 @@ public class DetectionEngine {
         return new MeasuredPoint(rgbTimestamp, depthPoint);
     }
 
-    public boolean getOrientationDir(PointF bbox_in){
+    public boolean getOrientationDir(PointF bbox_in) {
         boolean isClockwise = false;
-        float adjacent = 320.0f - 640.0f*bbox_in.x;
-        if(adjacent < 0.f){
+        float adjacent = 320.0f - 640.0f * bbox_in.x;
+        if (adjacent < 0.f) {
             isClockwise = true;
-        }
-        else{
+        } else {
             isClockwise = false;
         }
         return isClockwise;
     }
 
-    public double getOrientationVal(PointF bbox_in){
-       double orientation = 0;
-        double adjacent = (double)(480.0f - 480.0f*bbox_in.y);
-        double opposite = (double)(Math.abs((320.0f - 640.0f*bbox_in.x)));
-            orientation = Math.toDegrees(Math.atan(opposite/adjacent));
+    public double getOrientationVal(PointF bbox_in) {
+        double orientation = 0;
+        double adjacent = (double) (480.0f - 480.0f * bbox_in.y);
+        double opposite = (double) (Math.abs((320.0f - 640.0f * bbox_in.x)));
+        orientation = Math.toDegrees(Math.atan(opposite / adjacent));
         return orientation;
     }
 }
