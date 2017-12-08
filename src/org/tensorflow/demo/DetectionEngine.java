@@ -108,6 +108,7 @@ public class DetectionEngine {
 
     }
 
+    // Calling instances must call these!
     public void resumeEngine() {
         Log.i(TAG, "resumeEngine called");
     }
@@ -117,7 +118,7 @@ public class DetectionEngine {
         mConfig.putBoolean(TangoConfig.KEY_BOOLEAN_AUTORECOVERY, true);
     }
 
-    public void startDetectorTango(TangoConfig mConfig, Tango mTango) {
+    public void startDetectorTango(Tango mTango) {
         tango_ = mTango;
         startTango();
     }
@@ -135,6 +136,50 @@ public class DetectionEngine {
     public void destroyEngine() {
         Log.i(TAG, "destroyEngine called");
     }
+
+    private void startTango() {
+        try {
+
+            tangoConnected_ = true;
+            Log.i(TAG, "Tango Connected");
+
+            // Attach cameras to textures.
+            synchronized(this) {
+                for (Map.Entry<Integer, Integer> entry : cameraTextures_.entrySet())
+                    tango_.connectTextureId(entry.getKey(), entry.getValue());
+            }
+
+            // Attach Tango experimental listener.
+            tango_.experimentalConnectOnFrameListener(TangoCameraIntrinsics.TANGO_CAMERA_COLOR,
+                    new Tango.OnFrameAvailableListener() {
+                        @Override
+                        public void onFrameAvailable(TangoImageBuffer tangoImageBuffer, int i) {
+                            mCurrentImageBuffer = copyImageBuffer(tangoImageBuffer);
+                            // Log.i("onFrame",String.format("Tango Image Size: %dx%d",
+                            //     mCurrentImageBuffer.width,mCurrentImageBuffer.height));
+                        }
+
+                        TangoImageBuffer copyImageBuffer(TangoImageBuffer imageBuffer) {
+                            ByteBuffer clone = ByteBuffer.allocateDirect(imageBuffer.data.capacity());
+                            imageBuffer.data.rewind();
+                            clone.put(imageBuffer.data);
+                            imageBuffer.data.rewind();
+                            clone.flip();
+                            return new TangoImageBuffer(imageBuffer.width, imageBuffer.height,
+                                    imageBuffer.stride, imageBuffer.frameNumber,
+                                    imageBuffer.timestamp, imageBuffer.format, clone,
+                                    imageBuffer.exposureDurationNs);
+                        }
+                    });
+        }
+        catch (TangoOutOfDateException e) {
+            Log.e(TAG, "TangoCore update required");
+        }
+        catch (TangoErrorException e) {
+            Log.e(TAG, "Tango error: " + e.getMessage());
+        }
+    }
+    // END required calls.
 
     public synchronized void attachTexture(final int cameraId, final int textureName) {
         if (textureName > 0) {
@@ -183,50 +228,6 @@ public class DetectionEngine {
                 detect.argbInt = renderer_.argbInt;
                 detect.processPerFrame();
             }
-        }
-    }
-
-
-    private void startTango() {
-        try {
-
-            tangoConnected_ = true;
-            Log.i("startTango", "Tango Connected");
-
-            // Attach cameras to textures.
-            synchronized(this) {
-                for (Map.Entry<Integer, Integer> entry : cameraTextures_.entrySet())
-                    tango_.connectTextureId(entry.getKey(), entry.getValue());
-            }
-
-            // Attach Tango experimental listener.
-            tango_.experimentalConnectOnFrameListener(TangoCameraIntrinsics.TANGO_CAMERA_COLOR,
-                    new Tango.OnFrameAvailableListener() {
-                        @Override
-                        public void onFrameAvailable(TangoImageBuffer tangoImageBuffer, int i) {
-                            mCurrentImageBuffer = copyImageBuffer(tangoImageBuffer);
-                           // Log.i("onFrame",String.format("Tango Image Size: %dx%d",
-                               //     mCurrentImageBuffer.width,mCurrentImageBuffer.height));
-                        }
-
-                        TangoImageBuffer copyImageBuffer(TangoImageBuffer imageBuffer) {
-                            ByteBuffer clone = ByteBuffer.allocateDirect(imageBuffer.data.capacity());
-                            imageBuffer.data.rewind();
-                            clone.put(imageBuffer.data);
-                            imageBuffer.data.rewind();
-                            clone.flip();
-                            return new TangoImageBuffer(imageBuffer.width, imageBuffer.height,
-                                    imageBuffer.stride, imageBuffer.frameNumber,
-                                    imageBuffer.timestamp, imageBuffer.format, clone,
-                                    imageBuffer.exposureDurationNs);
-                        }
-                    });
-        }
-        catch (TangoOutOfDateException e) {
-            Log.e(TAG, "TangoCore update required");
-        }
-        catch (TangoErrorException e) {
-            Log.e(TAG, "Tango error: " + e.getMessage());
         }
     }
 
@@ -300,7 +301,7 @@ public class DetectionEngine {
         }
     }
 
-    enum DetectionDirection {
+    public enum DetectionDirection {
         LEFT,
         RIGHT,
         AHEAD
