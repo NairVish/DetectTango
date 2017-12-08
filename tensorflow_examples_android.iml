@@ -99,11 +99,13 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 23 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" exported="" name="com.android.support:support-annotations:23.4.0@jar" level="project" />
+    <orderEntry type="library" exported="" name="com.android.support:support-vector-drawable-23.4.0" level="project" />
+    <orderEntry type="library" exported="" name="com.android.support:support-v4-23.4.0" level="project" />
     <orderEntry type="library" exported="" name="com.google.tango:sdk-base-1.55" level="project" />
+    <orderEntry type="library" exported="" name="com.android.support:appcompat-v7-23.4.0" level="project" />
     <orderEntry type="library" exported="" name="com.google.tango:sdk-support-1.55" level="project" />
-    <orderEntry type="library" exported="" name="com.android.support:appcompat-v7-23.0.0" level="project" />
-    <orderEntry type="library" exported="" name="com.android.support:support-annotations:23.0.0@jar" level="project" />
-    <orderEntry type="library" exported="" name="com.android.support:support-v4-23.0.0" level="project" />
+    <orderEntry type="library" exported="" name="com.android.support:animated-vector-drawable-23.4.0" level="project" />
     <orderEntry type="library" exported="" name="com.google.tango:sdk-transform-helpers-1.55" level="project" />
     <orderEntry type="library" exported="" name="com.google.tango:sdk-depth-interpolation-1.55" level="project" />
   </component>

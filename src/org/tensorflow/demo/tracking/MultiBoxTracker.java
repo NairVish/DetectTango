@@ -242,6 +242,34 @@ public class MultiBoxTracker {
 
   }
 
+  public synchronized void passRectFromTrackerToDetector(int width, int height) {
+    // TODO(andrewharp): This may not work for non-90 deg rotations.
+    // For portrait
+    final float multiplier =
+            Math.min(width / (float) frameHeight, height / (float) frameWidth);
+    frameToCanvasMatrix =
+            ImageUtils.getTransformationMatrix(
+                    frameWidth,
+                    frameHeight,
+                    (int) (multiplier * frameHeight),
+                    (int) (multiplier * frameWidth),
+                    sensorOrientation,
+                    false);
+    rectDepth.clear();
+
+    for (final TrackedRecognition recognition : trackedObjects) {
+      final RectF trackedPos =
+              (objectTracker != null)
+                      ? recognition.trackedObject.getTrackedPositionInPreviewFrame()
+                      : new RectF(recognition.location);
+
+
+      //logger.i("Added rect: %s",trackedPos); Correct at this point!
+      rectDepth.add(new RectF(trackedPos));
+    }
+
+  }
+
   private boolean initialized = false;
 
   public synchronized void onFrame(
