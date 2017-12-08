@@ -96,7 +96,7 @@ class Renderer implements GLSurfaceView.Renderer {
       "	gl_FragColor = cap != 0 ? c.bgra : c;\n" +
       "}\n";
 
-   DetectorEngine dE_;
+   DetectionEngine dE_;
 
    int videoProgram_;
    int videoVertexAttribute_;
@@ -109,7 +109,7 @@ class Renderer implements GLSurfaceView.Renderer {
    volatile boolean saveNextFrame_;
    public volatile int[] argbInt = null;
 
-   Renderer(DetectorEngine activity) {
+   Renderer(DetectionEngine activity) {
       dE_ = activity;
    }
 

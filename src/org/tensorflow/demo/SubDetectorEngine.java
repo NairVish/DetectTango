@@ -56,10 +56,10 @@ import org.tensorflow.demo.R;
 import org.tensorflow.demo.tracking.ObjectTracker;
 
 /**
- * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
+ * An engine that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
  * objects.
  */
-public class DetectorActivity extends Activity  {
+public class SubDetectorEngine {
   private static final Logger LOGGER = new Logger();
 
   // Configuration values for the prepackaged multibox model.
@@ -143,7 +143,7 @@ public class DetectorActivity extends Activity  {
           1920, 1080,
           0, true);
 
-  public DetectorActivity(Context context){
+  public SubDetectorEngine(Context context){
     this.context = context;
   }
 
@@ -212,16 +212,16 @@ public class DetectorActivity extends Activity  {
     processImageRGBbytes(rgbBytes);
   }*/
 
-  @Override
-  public boolean onKeyDown(final int keyCode, final KeyEvent event) {
-    if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-      debug = !debug;
-      requestRender();
-      onSetDebug(debug);
-      return true;
-    }
-    return super.onKeyDown(keyCode, event);
-  }
+//  @Override
+//  public boolean onKeyDown(final int keyCode, final KeyEvent event) {
+//    if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+//      debug = !debug;
+//      requestRender();
+//      onSetDebug(debug);
+//      return true;
+//    }
+//    return super.onKeyDown(keyCode, event);
+//  }
 
 
   public void setup() {
@@ -246,7 +246,7 @@ public class DetectorActivity extends Activity  {
     } else {
       detector =
           TensorFlowMultiBoxDetector.create(
-              getAssets(),
+              context.getAssets(),
               MB_MODEL_FILE,
               MB_LOCATION_FILE,
               MB_IMAGE_MEAN,

@@ -8,24 +8,17 @@ import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.opengl.GLSurfaceView;
-import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.Display;
-import android.view.WindowManager;
-import android.widget.Toast;
 
 import com.google.atap.tangoservice.Tango;
 import com.google.atap.tangoservice.TangoCameraIntrinsics;
 import com.google.atap.tangoservice.TangoConfig;
-import com.google.atap.tangoservice.TangoCoordinateFramePair;
 import com.google.atap.tangoservice.TangoErrorException;
-import com.google.atap.tangoservice.TangoEvent;
 import com.google.atap.tangoservice.TangoInvalidException;
 import com.google.atap.tangoservice.TangoOutOfDateException;
 import com.google.atap.tangoservice.TangoPointCloudData;
 import com.google.atap.tangoservice.TangoPoseData;
-import com.google.atap.tangoservice.TangoXyzIjData;
 import com.google.atap.tangoservice.experimental.TangoImageBuffer;
 import com.google.tango.depthinterpolation.TangoDepthInterpolation;
 import com.google.tango.support.TangoPointCloudManager;
@@ -34,9 +27,7 @@ import com.google.tango.support.TangoSupport;
 import org.tensorflow.demo.env.ImageUtils;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -44,9 +35,9 @@ import java.util.concurrent.TimeUnit;
  * Created by manjekarbudhai on 7/27/17.
  */
 
-public class DetectorEngine {
+public class DetectionEngine {
 
-    private static final String TAG = "DetectorEngine";
+    private static final String TAG = "DetectionEngine";
 
     private Context mContext;
     private Activity mActivity;
@@ -61,7 +52,7 @@ public class DetectorEngine {
     private volatile TangoImageBuffer mCurrentImageBuffer;
     private int mDisplayRotation = 0;
     private Matrix rgbImageToDepthImage;
-    protected DetectorActivity detect;
+    protected SubDetectorEngine detect;
 
     public static final String DETECTION_SPEAK_BROADCAST_ACTION = "org.tensorflow.demo.SPEAK_DETECTION";
     public static final String KEY_DEPTH = "org.tensorflow.demo.SPEAK_DETECTION.CLOSEST_DEPTH";
@@ -79,13 +70,13 @@ public class DetectorEngine {
     }
 
     @SuppressLint("WrongConstant")
-    DetectorEngine(Context context, Activity activity) {
+    DetectionEngine(Context context, Activity activity) {
         mContext = context;
         mActivity = activity;
 
         // GLSurfaceView for RGB color camera
 
-        detect = new DetectorActivity(mContext);
+        detect = new SubDetectorEngine(mContext);
 
         Display display = mActivity.getWindowManager().getDefaultDisplay();
         mDisplayRotation = display.getRotation();

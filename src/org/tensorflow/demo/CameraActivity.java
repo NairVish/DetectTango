@@ -18,31 +18,22 @@ package org.tensorflow.demo;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
 import android.media.Image.Plane;
-import android.media.ImageReader;
-import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Trace;
-import android.util.Size;
-import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.widget.Toast;
 import java.nio.ByteBuffer;
 
-import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
 
 public abstract class CameraActivity extends Activity {
@@ -71,7 +62,7 @@ public abstract class CameraActivity extends Activity {
   protected Runnable postInferenceCallback;
   protected byte[][] yuvBytes=new byte[3][];
   protected int yRowStride;
-  protected DetectorActivity detect;
+  protected SubDetectorEngine detect;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -81,7 +72,7 @@ public abstract class CameraActivity extends Activity {
 
     setContentView(R.layout.activity_camera);
 
-    detect = new DetectorActivity(this);
+    detect = new SubDetectorEngine(this);
 
     if (hasPermission()) {
       setFragment();
@@ -95,7 +86,7 @@ public abstract class CameraActivity extends Activity {
 
     setContentView(R.layout.camera_connection_fragment_tracking);
 
-    detect = new DetectorActivity(CameraActivity.this);
+    detect = new SubDetectorEngine(CameraActivity.this);
   }
 
   /**
