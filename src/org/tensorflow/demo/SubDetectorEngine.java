@@ -255,7 +255,7 @@ public class SubDetectorEngine {
                 new DrawCallback() {
                     @Override
                     public void drawCallback(final Canvas canvas) {
-
+                        LOGGER.i("Draw callback called!");
                     }
                 });
 

@@ -54,6 +54,8 @@ public class DetectionEngine {
     private Matrix rgbImageToDepthImage;
     protected SubDetectorEngine detect;
 
+    private boolean speakDetection = false;
+
     public static final String DETECTION_SPEAK_BROADCAST_ACTION = "org.tensorflow.demo.SPEAK_DETECTION";
     public static final String KEY_DEPTH = "org.tensorflow.demo.SPEAK_DETECTION.CLOSEST_DEPTH";
     public static final String KEY_DIRECTION = "org.tensorflow.demo.SPEAK_DETECTION.KEY_DIRECTION";
@@ -70,7 +72,7 @@ public class DetectionEngine {
     }
 
     @SuppressLint("WrongConstant")
-    DetectionEngine(Context context, Activity activity) {
+    public DetectionEngine(Context context, Activity activity) {
         mContext = context;
         mActivity = activity;
 
@@ -111,6 +113,7 @@ public class DetectionEngine {
     // Calling instances must call these!
     public void resumeEngine() {
         Log.i(TAG, "resumeEngine called");
+        toggleDetectionSpeak(true);
     }
 
     public void instantiateDetectorTangoConfig(TangoConfig mConfig) {
@@ -131,10 +134,15 @@ public class DetectionEngine {
     public void pauseEngine() {
         Log.i(TAG, "pauseEngine called");
         tangoConnected_ = false;
+        toggleDetectionSpeak(false);
     }
 
     public void destroyEngine() {
         Log.i(TAG, "destroyEngine called");
+    }
+
+    public void toggleDetectionSpeak(boolean b) {
+        speakDetection = b;
     }
     // END required calls.
 
@@ -264,7 +272,7 @@ public class DetectionEngine {
                                     }
                                 }
                             }
-                            if (closest_obstacle.x != 0.0f) {
+                            if (closest_obstacle.x != 0.0f && speakDetection) {
                                 boolean orientation = getOrientationDir(closest_obstacle);
                                 double orientationval = getOrientationVal(closest_obstacle);
                                 DetectionDirection curr;

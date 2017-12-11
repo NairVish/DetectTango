@@ -73,6 +73,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/rs" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/shaders" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/gradleBuild/.DS_Store" />
       <excludeFolder url="file://$MODULE_DIR$/gradleBuild/android-profile" />
       <excludeFolder url="file://$MODULE_DIR$/gradleBuild/intermediates/annotations" />
       <excludeFolder url="file://$MODULE_DIR$/gradleBuild/intermediates/blame" />
